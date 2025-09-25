@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level Devil JS - The Platformer of Lies</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <audio id="game-soundtrack" src="placeholder_frenetic_music.mp3" loop></audio>
+
+    <div id="main-menu" class="screen active">
+        <h1>LEVEL DEVIL JS</h1>
+        <div class="menu-buttons">
+            <button id="btn-play">JOGAR</button>
+            <button id="btn-credits">CRÉDITOS</button>
+            <button id="btn-exit">SAIR</button>
+        </div>
+    </div>
+
+    <div id="level-select-menu" class="screen">
+        <h2>Selecione o Nível</h2>
+        <div id="level-grid">
+            </div>
+        <button id="btn-back-to-main">Voltar ao Menu</button>
+    </div>
+
+    <div id="credits-screen" class="screen">
+        <h2>Créditos</h2>
+        <p>Desenvolvimento e Design: Placeholder Creator</p>
+        <p>Conceito Inspirado em Level Devil.</p>
+        <p>Música: Placeholder (Link para uma trilha Royalty-Free)</p>
+        <button id="btn-back-from-credits">Voltar</button>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div id="game-ui">
+            <span id="level-display">Nível: 1</span>
+            <button id="btn-pause-game">Menu</button>
+        </div>
+        <canvas id="game-canvas" width="600" height="400"></canvas>
+    </div>
+
+    <div id="exit-message" class="screen">
+        <h2>Obrigado por jogar!</h2>
+        <p>Seu progresso (e sanidade) foi salvo.</p>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

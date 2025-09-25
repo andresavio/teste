@@ -26,12 +26,11 @@ const levelDisplay = document.getElementById('level-display');
 
 
 // --- DADOS DOS NÍVEIS (LEVEL DEVIL STYLE) ---
-// x, y, w, h
 const levelsData = {
     // Nível 1: Plataforma que cai (trap_fake_platform)
     1: [
-        { type: 'platform', x: 0, y: 350, w: 600, h: 50 }, // Chão principal
-        { type: 'goal', x: 550, y: 310, w: 30, h: 40 }, // Meta
+        { type: 'platform', x: 0, y: 350, w: 600, h: 50 },
+        { type: 'goal', x: 550, y: 310, w: 30, h: 40 },
         { type: 'trap_fake_platform', x: 250, y: 250, w: 50, h: 20, initialY: 250, triggered: false },
         { type: 'platform', x: 100, y: 300, w: 50, h: 50 },
     ],
@@ -39,10 +38,10 @@ const levelsData = {
     2: [
         { type: 'platform', x: 0, y: 350, w: 200, h: 50 },
         { type: 'platform', x: 400, y: 350, w: 200, h: 50 },
-        { type: 'goal', x: 50, y: 310, w: 30, h: 40, reversed: true }, // Armadilha: Tocar reinicia
-        { type: 'danger_invisible', x: 200, y: 340, w: 200, h: 10, visible: false }, // Armadilha invisível
+        { type: 'goal', x: 50, y: 310, w: 30, h: 40, reversed: true }, 
+        { type: 'danger_invisible', x: 200, y: 340, w: 200, h: 10, visible: false }, 
         { type: 'platform_moving', x: 100, y: 250, w: 50, h: 20, speed: 1, range: 100 },
-        { type: 'goal', x: 550, y: 310, w: 30, h: 40, reversed: false, visible: false }, // Meta verdadeira (invisível)
+        { type: 'goal', x: 550, y: 310, w: 30, h: 40, reversed: false, visible: false }, 
     ],
     // Nível 3: Bloco que desaparece (platform_disappearing)
     3: [
@@ -54,7 +53,7 @@ const levelsData = {
     ],
     // Nível 4: O CHÃO É LAVA! (Chão principal é perigoso)
     4: [
-        { type: 'danger', x: 0, y: 350, w: 600, h: 50 }, // CHÃO PERIGOSO
+        { type: 'danger', x: 0, y: 350, w: 600, h: 50 },
         { type: 'goal', x: 550, y: 310, w: 30, h: 40 },
         { type: 'platform', x: 50, y: 300, w: 50, h: 50 },
         { type: 'platform', x: 250, y: 250, w: 100, h: 20 },
@@ -64,7 +63,6 @@ const levelsData = {
     5: [
         { type: 'platform', x: 0, y: 350, w: 600, h: 50 },
         { type: 'goal', x: 550, y: 310, w: 30, h: 40 },
-        // Truque: Teto perigoso que cai
         { type: 'trap_ceiling', x: 0, y: 0, w: 600, h: 20, triggered: false, velY: 0 },
         { type: 'danger', x: 200, y: 300, w: 20, h: 50 },
     ],
@@ -73,10 +71,9 @@ const levelsData = {
         { type: 'platform', x: 0, y: 350, w: 600, h: 50 },
         { type: 'goal', x: 550, y: 310, w: 30, h: 40 },
         { type: 'platform', x: 100, y: 250, w: 50, h: 20 },
-        { type: 'trap_fake_platform', x: 450, y: 350, w: 100, h: 50, initialY: 350, triggered: false }, // Chão falso
-        { type: 'danger_invisible', x: 200, y: 340, w: 100, h: 10, visible: false }, // Buraco invisível
+        { type: 'trap_fake_platform', x: 450, y: 350, w: 100, h: 50, initialY: 350, triggered: false },
+        { type: 'danger_invisible', x: 200, y: 340, w: 100, h: 10, visible: false },
     ]
-    // Níveis 7 a 20 são cópias do Nível 6
 };
 
 // Preenche os níveis restantes (7 a 20) com o Level 6 placeholder
@@ -243,4 +240,152 @@ function gameLoop() {
         // Plataforma Móvel
         if (obj.type === 'platform_moving') {
             obj.x += obj.speed;
-            if (obj
+            if (obj.x > 500 || obj.x < 100) obj.speed *= -1;
+        }
+
+        // Plataforma Falsa Caindo
+        if (obj.type === 'trap_fake_platform' && obj.triggered) {
+            obj.y += 3; 
+            if (obj.y > canvas.height) {
+                obj.y = obj.initialY;
+                obj.triggered = false;
+            }
+        }
+
+        // Bloco Desaparecendo
+        if (obj.type === 'platform_disappearing' && obj.triggered) {
+             obj.w = Math.max(0, obj.w - 2);
+             obj.h = Math.max(0, obj.h - 2);
+        }
+        
+        // Teto que Cai (Nível 5)
+        if (obj.type === 'trap_ceiling') {
+            // Condição de trigger: Pular na área central
+            if (!obj.triggered && player.y < 300 && player.x > 100 && player.x < 500 && player.velY < 0) {
+                obj.triggered = true;
+                obj.velY = 2; // Começa a cair lentamente
+            }
+            
+            if (obj.triggered) {
+                obj.y += obj.velY;
+                if (obj.y > 100) obj.velY = 4; 
+            }
+        }
+
+
+        // --- DETECÇÃO DE COLISÃO ---
+        if (checkCollision(player, { x: obj.x, y: obj.y, w: obj.w, h: obj.h })) {
+            
+            // Vitória/Morte por Meta
+            if (obj.type === 'goal') {
+                if (!obj.reversed) {
+                    levelComplete();
+                    return;
+                } else {
+                    isDead = true; // Meta traiçoeira mata
+                }
+            }
+            
+            // Morte por Dano
+            if (obj.type.includes('danger') || obj.type.includes('trap_ceiling')) {
+                isDead = true;
+            }
+
+            // Colisão Vertical (Piso)
+            if (obj.type.includes('platform') && player.velY > 0 && player.y + player.height <= obj.y + player.velY) {
+                
+                player.y = obj.y - player.height; 
+                player.velY = 0; 
+                player.onGround = true;
+
+                // Lógica de "carregar" para plataforma móvel
+                if (obj.type === 'platform_moving') {
+                    player.x += obj.speed;
+                }
+                
+                // Triggers de armadilhas ao pisar
+                if (obj.type === 'trap_fake_platform') { obj.triggered = true; }
+                if (obj.type === 'platform_disappearing') { obj.triggered = true; }
+            } 
+            
+            // Colisão Vertical (Teto)
+            else if (obj.type.includes('platform') && player.velY < 0 && player.y >= obj.y + obj.h - player.velY) {
+                player.y = obj.y + obj.h;
+                player.velY = 0;
+
+                // Triggers de armadilhas ao bater no teto
+                if (obj.type === 'platform_disappearing') { obj.triggered = true; }
+            }
+        }
+    });
+
+    // Morte por queda ou armadilha
+    if (isDead || player.y > canvas.height) {
+        gameOver();
+        return;
+    }
+
+    // 4. Desenhar o Jogador
+    drawPlayer();
+
+    // 5. Controles
+    handleMovement();
+
+    // Loop
+    gameLoopId = requestAnimationFrame(gameLoop);
+}
+
+// --- FUNÇÕES DE DESENHO ---
+function drawObject(obj) {
+    if (obj.visible === false && !obj.triggered) return; 
+
+    ctx.fillStyle = '#444';
+    if (obj.type.includes('platform')) ctx.fillStyle = '#2ecc71';
+    if (obj.type.includes('danger')) ctx.fillStyle = '#e74c3c';
+    if (obj.type.includes('trap')) ctx.fillStyle = '#f1c40f'; 
+    if (obj.type === 'goal') ctx.fillStyle = obj.visible === false ? 'rgba(255, 255, 0, 0)' : '#f39c12';
+    
+    if (obj.visible !== false || obj.type === 'trap_ceiling' || obj.type === 'trap_fake_platform') {
+         ctx.fillRect(obj.x, obj.y, obj.w, obj.h);
+    }
+}
+
+function drawPlayer() {
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+}
+
+
+// --- CONTROLES DE ENTRADA ---
+let keys = {};
+window.onkeydown = (e) => { keys[e.key] = true; };
+window.onkeyup = (e) => { keys[e.key] = false; };
+
+function handleMovement() {
+    if (keys['ArrowLeft'] || keys['a']) {
+        player.x -= player.speed;
+    }
+    if (keys['ArrowRight'] || keys['d']) {
+        player.x += player.speed;
+    }
+
+    if ((keys['ArrowUp'] || keys['w'] || keys[' ']) && player.onGround) {
+        player.velY = player.jumpPower;
+        player.onGround = false;
+    }
+
+    if (player.x < 0) player.x = 0;
+    if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+}
+
+// --- INICIALIZAÇÃO ---
+function startGameLoop() {
+    if (gameIsRunning) {
+        gameLoop();
+    }
+}
+
+// Inicializa o jogo ao carregar a página
+updateLevelSelect();
+loadLevel(currentLevel);
+navigateTo('mainMenu');
